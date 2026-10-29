@@ -92,6 +92,7 @@ a.btn{display:flex;align-items:center;justify-content:center;text-decoration:non
 .new{margin-left:8px;background:var(--heart);color:#fff;border-radius:10px;padding:0 8px;font-size:.6em;vertical-align:middle}
 header{flex-wrap:wrap}header h1{white-space:nowrap;font-size:1em}.size{white-space:nowrap}
 .del{width:100%;min-height:52px;margin-top:10px;border-radius:16px;border:2px solid var(--heart);background:var(--card);color:var(--heart);font:inherit;font-weight:900;font-size:.8em}
+.ren{margin-left:auto;flex:none;min-height:48px;padding:4px 14px;border-radius:14px;border:2px solid var(--acc);background:var(--card);color:var(--acc);font:inherit;font-weight:900;font-size:.7em}
 :focus-visible{outline:4px solid var(--heart);outline-offset:2px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script></head>
@@ -177,7 +178,7 @@ function ob(){var e=$("ob");if(OB===null){e.innerHTML="";return}
 function fam(){
  var txt="かぞくフォトに参加してね。リンクを押すだけで、家族の写真が見られます。\n"+location.origin+location.pathname+"?join="+FAM.code;
  var ms=MEMS.map(function(n){return[n,n==ME?"あなた":"家族"]});
- return '<button class="btn" id="fb" style="width:100%;min-height:52px;margin-bottom:12px">◀ もどる</button><h2>家族のメンバー</h2>'+ms.map(function(m){return '<div class="mem"><div class="av">'+esc(m[0].slice(0,1))+'</div><div>'+esc(m[0])+'<small>'+m[1]+'・参加ずみ</small></div></div>'}).join('')+'<h2 style="margin-top:18px">家族をふやす</h2><ol class="steps"><li>下のボタンで、LINEに招待を送ります</li><li>相手がリンクを押します</li><li>お名前を入れて、参加できました！</li></ol><a class="btn main" target="_blank" rel="noopener" href="https://line.me/R/msg/text/?'+encodeURIComponent(txt)+'">💬 LINEで招待を送る</a><div class="note" style="margin-top:14px">LINEが使えない方には、このあいことばをお伝えください。</div><div class="code">'+FAM.show+'</div><button class="btn" id="cp" style="width:100%">あいことばをコピー</button><div class="note">👵 おじいちゃん・おばあちゃんは、届いたリンクを押すだけ。パスワードは要りません。</div><button class="btn" id="hp" style="width:100%;margin-top:12px">使い方をもう一度見る</button>'}
+ return '<button class="btn" id="fb" style="width:100%;min-height:52px;margin-bottom:12px">◀ もどる</button><h2>家族のメンバー</h2>'+ms.map(function(m){return '<div class="mem"><div class="av">'+esc(m[0].slice(0,1))+'</div><div>'+esc(m[0])+'<small>'+m[1]+'・参加ずみ</small></div>'+(m[1]=="あなた"?'<button class="ren" id="ren">✏️ 名前を変える</button>':'')+'</div>'}).join('')+'<h2 style="margin-top:18px">家族をふやす</h2><ol class="steps"><li>下のボタンで、LINEに招待を送ります</li><li>相手がリンクを押します</li><li>お名前を入れて、参加できました！</li></ol><a class="btn main" target="_blank" rel="noopener" href="https://line.me/R/msg/text/?'+encodeURIComponent(txt)+'">💬 LINEで招待を送る</a><div class="note" style="margin-top:14px">LINEが使えない方には、このあいことばをお伝えください。</div><div class="code">'+FAM.show+'</div><button class="btn" id="cp" style="width:100%">あいことばをコピー</button><div class="note">👵 おじいちゃん・おばあちゃんは、届いたリンクを押すだけ。パスワードは要りません。</div><button class="btn" id="hp" style="width:100%;margin-top:12px">使い方をもう一度見る</button>'}
 P[0].k=[{w:"ゆきこ",t:"リレーの選手！すごいね"},{w:"けんじ",t:"応援に行くよ"}];
 P[2].k=[{w:"おばあちゃん",t:"きれいな紅葉ね、ありがとう"}];
 function keep(fn){var m=$("main"),y=m.scrollTop;fn();render();m.scrollTop=y}
@@ -262,6 +263,7 @@ function bind(){
  var sy=$("sy"),sm=$("sm");
  if(sy){sy.onchange=function(){CY=+sy.value;SD=null;$("cal").innerHTML=CAL();bind()};sm.onchange=function(){CMo=+sm.value;SD=null;$("cal").innerHTML=CAL();bind()}}
  document.querySelectorAll(".del").forEach(function(e){e.onclick=function(){DEL(P[+e.dataset.i])}});
+ var ren=$("ren");if(ren)ren.onclick=RENAME;
  var qi=$("q");
  if(qi){qi.oninput=function(){Q=qi.value;$("res").innerHTML=R();bind()};document.querySelectorAll(".sg").forEach(function(e){e.onclick=function(){Q=e.dataset.q;qi.value=Q;$("res").innerHTML=R();bind()}})}
  var f=$("file");
@@ -344,6 +346,13 @@ async function POST(msg,items){
   }
   draft=[];await load();cur=0;tab="home";render();toast("家族に送りました")
  }catch(e){fail(e);go.disabled=false;go.textContent="家族に送る"}
+}
+async function RENAME(){
+ var v=prompt("新しいお名前を入れてください",ME);if(v===null)return;v=v.trim().slice(0,12);if(!v)return;
+ var r=await sb.from("members").update({name:v}).eq("id",MID).select();
+ if(r.error)return fail(r.error);
+ if(!r.data.length){toast("名前を変えられませんでした。設定が足りないようです");return}
+ ME=v;toast("名前を変えました");await load();keep(function(){})
 }
 async function DEL(p){
  if(!confirm("この投稿を消しますか？\n消すと、元にもどせません。"))return;
