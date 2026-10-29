@@ -80,7 +80,7 @@ a.btn{display:flex;align-items:center;justify-content:center;text-decoration:non
 .t .pl,.th .pl,.thumbs .pl{width:36px;height:36px;font-size:.9em}
 .vw .du{position:absolute;left:10px;bottom:10px;background:rgba(0,0,0,.65);color:#fff;border-radius:12px;padding:0 10px;font-size:.7em}
 .calh{display:flex;align-items:center;justify-content:space-between;margin:6px 0 10px;font-size:1.1em}
-.cnav{width:56px;height:56px;border-radius:16px;border:2px solid var(--acc);background:var(--card);color:var(--acc);font-weight:900}.cnav:disabled{opacity:.3}
+.cnav,.pn{width:56px;height:56px;border-radius:16px;border:2px solid var(--acc);background:var(--card);color:var(--acc);font-weight:900}.cnav:disabled,.pn:disabled{opacity:.3}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.wd{text-align:center;font-size:.7em;color:var(--sub)}
 .cd{position:relative;min-height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font:inherit;font-size:.85em;font-weight:700;color:var(--sub);border:0;background:transparent;padding:0}
 .cd.has{background:var(--acc);color:var(--onacc);font-weight:900}.cd.sel{outline:4px solid var(--heart);outline-offset:1px}.cd.today{box-shadow:inset 0 0 0 3px var(--heart)}
@@ -93,6 +93,10 @@ a.btn{display:flex;align-items:center;justify-content:center;text-decoration:non
 header{flex-wrap:wrap}header h1{white-space:nowrap;font-size:1em}.size{white-space:nowrap}
 .del{width:100%;min-height:52px;margin-top:10px;border-radius:16px;border:2px solid var(--heart);background:var(--card);color:var(--heart);font:inherit;font-weight:900;font-size:.8em}
 .ren{margin-left:auto;flex:none;min-height:48px;padding:4px 14px;border-radius:14px;border:2px solid var(--acc);background:var(--card);color:var(--acc);font:inherit;font-weight:900;font-size:.7em}
+.mbtn{width:100%;min-height:56px;border-radius:18px;border:2px solid var(--acc);background:var(--card);color:var(--acc);font:inherit;font-weight:900;font-size:.95em}
+#pk:empty{display:none}#pk{position:fixed;inset:0;z-index:15;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}
+.pksheet{background:var(--bg);width:100%;max-width:560px;border-radius:24px 24px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:92%;overflow-y:auto}
+.pc.on{background:var(--acc);color:var(--onacc);font-weight:900}
 :focus-visible{outline:4px solid var(--heart);outline-offset:2px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script></head>
@@ -100,7 +104,7 @@ header{flex-wrap:wrap}header h1{white-space:nowrap;font-size:1em}.size{white-spa
 <header><h1>かぞくフォト</h1><button class="size" id="fm">👪 家族</button><button class="size" id="sz">文字を大きく</button></header>
 <main id="main"></main>
 <nav id="nav"></nav>
-<div id="ob"></div><div class="toast" id="toast"></div>
+<div id="ob"></div><div id="pk"></div><div class="toast" id="toast"></div>
 <script>
 var P=[
 {f:"まなみ（孫）",d:"今日 9:12",m:"運動会でリレーの選手になったよ！",c:["#9FD3F5","#E7F5FF","#FFD43B","#69B578","#3F8F5B"],r:[]},
@@ -208,7 +212,7 @@ function toast(t){var e=$("toast");e.textContent=t;e.classList.add("show");setTi
 function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function home(){
  var ms=[];P.forEach(function(p){if(ms.indexOf(M(p))<0)ms.push(M(p))});
- var ag=P.filter(function(p){return p.y==NOW.getFullYear()-1&&p.md==TODAY})[0],h=NB()+(ag?AGO(ag):'')+'<div class="chips">'+ms.map(function(m){return '<button class="chip" data-m="'+m+'">'+L(m)+'</button>'}).join('')+'</div>';
+ var ag=P.filter(function(p){return p.y==NOW.getFullYear()-1&&p.md==TODAY})[0],h=NB()+(ag?AGO(ag):'')+'<div class="chips"><button class="mbtn" id="mbtn">📅 '+(ms.length?L(ms[0]):'カレンダー')+'　▼</button></div>';
  P.forEach(function(p,i){
   if(i==0||M(p)!=M(P[i-1]))h+='<h2 class="mh" id="m'+M(p)+'">'+L(M(p))+'の写真</h2>';h+='<div class="photo" id="p'+i+'" style="margin-bottom:20px">'+img(p)+'<div class="meta"><div class="who">'+esc(p.f)+'</div><div class="date">'+p.d+'</div><div class="msg">'+esc(p.m)+'</div>';
   var rs=p.r.map(function(k){return S[k][0]+" "+S[k][1]}).join("　");
@@ -263,6 +267,8 @@ function bind(){
  var sy=$("sy"),sm=$("sm");
  if(sy){sy.onchange=function(){CY=+sy.value;SD=null;$("cal").innerHTML=CAL();bind()};sm.onchange=function(){CMo=+sm.value;SD=null;$("cal").innerHTML=CAL();bind()}}
  document.querySelectorAll(".del").forEach(function(e){e.onclick=function(){DEL(P[+e.dataset.i])}});
+ var mb=$("mbtn");
+ if(mb){mb.onclick=openPK;$("main").onscroll=function(){var cu=null;$("main").querySelectorAll(".mh").forEach(function(h){if(h.getBoundingClientRect().top<=140)cu=h});if(cu){TOPYM=cu.id.slice(1);mb.textContent="📅 "+L(TOPYM)+"　▼"}}}
  var ren=$("ren");if(ren)ren.onclick=RENAME;
  var qi=$("q");
  if(qi){qi.oninput=function(){Q=qi.value;$("res").innerHTML=R();bind()};document.querySelectorAll(".sg").forEach(function(e){e.onclick=function(){Q=e.dataset.q;qi.value=Q;$("res").innerHTML=R();bind()}})}
@@ -346,6 +352,37 @@ async function POST(msg,items){
   }
   draft=[];await load();cur=0;tab="home";render();toast("家族に送りました")
  }catch(e){fail(e);go.disabled=false;go.textContent="家族に送る"}
+}
+
+var PY=0,PM=0,TOPYM="";
+function PCAL(){
+ var cnt={},inM=false;
+ P.forEach(function(p,i){var a=PD(p),k=a.join("-");if(!(k in cnt))cnt[k]=i;if(a[0]==PY&&a[1]==PM)inM=true});
+ var f=new Date(PY,PM-1,1).getDay(),n=new Date(PY,PM,0).getDate(),cur=PY*12+PM-1,lo=2020*12,hi=NOW.getFullYear()*12+NOW.getMonth();
+ var ys='<select id="pky" aria-label="年">',ms='<select id="pkm" aria-label="月">';
+ for(var a=2020;a<=NOW.getFullYear();a++)ys+='<option value="'+a+'"'+(a==PY?' selected':'')+'>'+a+'年</option>';
+ for(var b=1;b<=12;b++)ms+='<option value="'+b+'"'+(b==PM?' selected':'')+'>'+b+'月</option>';
+ var h='<div class="calh"><button class="pn" data-d="-1" aria-label="まえの月"'+(cur<=lo?' disabled':'')+'>◀</button><span class="sels">'+ys+'</select>'+ms+'</select></span><button class="pn" data-d="1" aria-label="つぎの月"'+(cur>=hi?' disabled':'')+'>▶</button></div><button class="tdy" id="pkt">📅 今日にもどる</button><div class="cal">';
+ "日月火水木金土".split("").forEach(function(w){h+='<div class="wd">'+w+'</div>'});
+ for(var i=0;i<f;i++)h+='<div></div>';
+ for(var d=1;d<=n;d++){var k=PY+"-"+PM+"-"+d;h+=(k in cnt)?'<button class="cd pc on" data-i="'+cnt[k]+'">'+d+'</button>':'<div class="cd">'+d+'</div>'}
+ h+='</div><div class="count" style="margin-top:10px">'+(inM?'色のついた日をおすと、その日の写真へ':'この月の写真はありません')+'</div>';
+ if(inM)h+='<button class="btn main" id="pkg" style="width:100%;margin-bottom:8px">'+PM+'月の写真へ</button>';
+ return h+'<button class="btn" id="pkc" style="width:100%">とじる</button>'}
+function closePK(){$("pk").innerHTML=""}
+function drawPK(){
+ var e=$("pk");e.innerHTML='<div class="pksheet">'+PCAL()+'</div>';
+ e.onclick=function(ev){if(ev.target===e)closePK()};
+ e.querySelectorAll(".pn").forEach(function(b){b.onclick=function(){var v=PY*12+PM-1+(+b.dataset.d);PY=Math.floor(v/12);PM=v%12+1;drawPK()}});
+ $("pky").onchange=function(){PY=+this.value;drawPK()};$("pkm").onchange=function(){PM=+this.value;drawPK()};
+ $("pkt").onclick=function(){PY=NOW.getFullYear();PM=NOW.getMonth()+1;drawPK()};
+ $("pkc").onclick=closePK;
+ var g=$("pkg");if(g)g.onclick=function(){var el=$("m"+PY+"年"+PM+"月");closePK();if(el)el.scrollIntoView()};
+ e.querySelectorAll(".pc.on").forEach(function(b){b.onclick=function(){var el=$("p"+b.dataset.i);closePK();if(el)el.scrollIntoView()}})
+}
+function openPK(){
+ var t=TOPYM||(P.length?M(P[0]):""),m=t.match(/([0-9]+)年([0-9]+)月/);
+ PY=m?+m[1]:NOW.getFullYear();PM=m?+m[2]:NOW.getMonth()+1;drawPK()
 }
 async function RENAME(){
  var v=prompt("新しいお名前を入れてください",ME);if(v===null)return;v=v.trim().slice(0,12);if(!v)return;
