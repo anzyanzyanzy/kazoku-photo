@@ -83,7 +83,7 @@ a.btn{display:flex;align-items:center;justify-content:center;text-decoration:non
 .cnav,.pn{width:56px;height:56px;border-radius:16px;border:2px solid var(--acc);background:var(--card);color:var(--acc);font-weight:900}.cnav:disabled,.pn:disabled{opacity:.3}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.wd{text-align:center;font-size:.7em;color:var(--sub)}
 .cd{position:relative;min-height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font:inherit;font-size:.85em;font-weight:700;color:var(--sub);border:0;background:transparent;padding:0}
-.cd.has{background:var(--acc);color:var(--onacc);font-weight:900}.cd.sel{outline:4px solid var(--heart);outline-offset:1px}.cd.today{box-shadow:inset 0 0 0 3px var(--heart)}
+.cd.has{background:var(--acc);color:var(--onacc);font-weight:900}.cd.sel{outline:none}.cd.today{box-shadow:inset 0 0 0 3px var(--heart)}
 .cd i{position:absolute;top:2px;right:6px;font-size:.6em;font-style:normal;font-weight:900}
 .sels{display:flex;gap:6px}.sels select{font:inherit;font-weight:900;font-size:.85em;padding:8px 6px;min-height:52px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
 .tdy{width:100%;min-height:52px;margin-bottom:10px;border-radius:16px;border:2px solid var(--heart);background:var(--card);color:var(--heart);font:inherit;font-weight:900;font-size:.85em}
@@ -97,6 +97,8 @@ header{flex-wrap:wrap}header h1{white-space:nowrap;font-size:1em}.size{white-spa
 #pk:empty{display:none}#pk{position:fixed;inset:0;z-index:15;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}
 .pksheet{background:var(--bg);width:100%;max-width:560px;border-radius:24px 24px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:92%;overflow-y:auto}
 .pc.on{background:var(--acc);color:var(--onacc);font-weight:900}
+.cd.sel{background:var(--heart);color:var(--onacc);font-weight:900;box-shadow:0 0 0 3px var(--bg),0 0 0 6px var(--heart);position:relative;z-index:1}
+.pkinfo{text-align:center;margin:14px 0 8px;font-size:1em;color:var(--sub)}.pkinfo b{color:var(--heart);font-size:1.3em}
 :focus-visible{outline:4px solid var(--heart);outline-offset:2px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script></head>
@@ -165,9 +167,10 @@ function CAL(){
  "日月火水木金土".split("").forEach(function(w){h+='<div class="wd">'+w+'</div>'});
  for(var i=0;i<f;i++)h+='<div></div>';
  for(var d=1;d<=n;d++){var k=CY+"-"+CMo+"-"+d,c=cnt[k],t=(CY==NOW.getFullYear()&&CMo==NOW.getMonth()+1&&d==NOW.getDate())?' today':'';
-  h+=c?'<button class="cd has'+t+(SD==k?' sel':'')+'" data-k="'+k+'">'+d+(c.length>1?'<i>'+c.length+'</i>':'')+'</button>':'<div class="cd'+t+'">'+d+'</div>'}
+  h+=c?'<button class="cd has'+t+(SD==k?' sel':'')+'" data-k="'+k+'">'+d+(c.length>1?'<i>'+c.length+'</i>':'')+'</button>':'<div class="cd'+t+(SD==k?' sel':'')+'">'+d+'</div>'}
  h+='</div>';
  if(SD&&cnt[SD]){var s=SD.split("-");h+='<div class="count" style="margin-top:12px">'+s[1]+'月'+s[2]+'日の思い出</div>'+cnt[SD].map(RES).join('')}
+ else if(SD){var s2=SD.split("-");h+='<div class="count" style="margin-top:12px">'+s2[1]+'月'+s2[2]+'日の写真はありません</div>'}
  else h+='<div class="count" style="margin-top:12px">色のついた日を押すと、その日の写真が見られます</div>';
  return h}
 function ob(){var e=$("ob");if(OB===null){e.innerHTML="";return}
@@ -354,7 +357,7 @@ async function POST(msg,items){
  }catch(e){fail(e);go.disabled=false;go.textContent="家族に送る"}
 }
 
-var PY=0,PM=0,TOPYM="";
+var PY=0,PM=0,TOPYM="",PS="";
 function PCAL(){
  var cnt={},inM=false;
  P.forEach(function(p,i){var a=PD(p),k=a.join("-");if(!(k in cnt))cnt[k]=i;if(a[0]==PY&&a[1]==PM)inM=true});
@@ -365,9 +368,11 @@ function PCAL(){
  var h='<div class="calh"><button class="pn" data-d="-1" aria-label="まえの月"'+(cur<=lo?' disabled':'')+'>◀</button><span class="sels">'+ys+'</select>'+ms+'</select></span><button class="pn" data-d="1" aria-label="つぎの月"'+(cur>=hi?' disabled':'')+'>▶</button></div><button class="tdy" id="pkt">📅 今日にもどる</button><div class="cal">';
  "日月火水木金土".split("").forEach(function(w){h+='<div class="wd">'+w+'</div>'});
  for(var i=0;i<f;i++)h+='<div></div>';
- for(var d=1;d<=n;d++){var k=PY+"-"+PM+"-"+d;h+=(k in cnt)?'<button class="cd pc on" data-i="'+cnt[k]+'">'+d+'</button>':'<div class="cd">'+d+'</div>'}
- h+='</div><div class="count" style="margin-top:10px">'+(inM?'色のついた日をおすと、その日の写真へ':'この月の写真はありません')+'</div>';
- if(inM)h+='<button class="btn main" id="pkg" style="width:100%;margin-bottom:8px">'+PM+'月の写真へ</button>';
+ for(var d=1;d<=n;d++){var k=PY+"-"+PM+"-"+d;var sl=(PS==k?' sel':''),td=(PY==NOW.getFullYear()&&PM==NOW.getMonth()+1&&d==NOW.getDate())?' today':'';h+=(k in cnt)?'<button class="cd pc on'+td+sl+'" data-k="'+k+'" data-i="'+cnt[k]+'">'+d+'</button>':'<div class="cd'+td+sl+'">'+d+'</div>'}
+ var sk=PS.split("-"),sel=PS&&(PS in cnt);
+ h+='</div><div class="pkinfo">'+(PS?'選んだ日：<b>'+sk[1]+'月'+sk[2]+'日</b>'+(sel?'':'（写真なし）'):'緑の日をおして、日にちを選びます')+'</div>';
+ if(sel)h+='<button class="btn main" id="pks" data-i="'+cnt[PS]+'" style="width:100%;margin-bottom:8px">'+sk[1]+'月'+sk[2]+'日の写真を見る</button>';
+ if(inM)h+='<button class="btn" id="pkg" style="width:100%;margin-bottom:8px">'+PM+'月の写真へ</button>';
  return h+'<button class="btn" id="pkc" style="width:100%">とじる</button>'}
 function closePK(){$("pk").innerHTML=""}
 function drawPK(){
@@ -375,14 +380,15 @@ function drawPK(){
  e.onclick=function(ev){if(ev.target===e)closePK()};
  e.querySelectorAll(".pn").forEach(function(b){b.onclick=function(){var v=PY*12+PM-1+(+b.dataset.d);PY=Math.floor(v/12);PM=v%12+1;drawPK()}});
  $("pky").onchange=function(){PY=+this.value;drawPK()};$("pkm").onchange=function(){PM=+this.value;drawPK()};
- $("pkt").onclick=function(){PY=NOW.getFullYear();PM=NOW.getMonth()+1;drawPK()};
+ $("pkt").onclick=function(){PY=NOW.getFullYear();PM=NOW.getMonth()+1;PS=PY+"-"+PM+"-"+NOW.getDate();drawPK()};
  $("pkc").onclick=closePK;
  var g=$("pkg");if(g)g.onclick=function(){var el=$("m"+PY+"年"+PM+"月");closePK();if(el)el.scrollIntoView()};
- e.querySelectorAll(".pc.on").forEach(function(b){b.onclick=function(){var el=$("p"+b.dataset.i);closePK();if(el)el.scrollIntoView()}})
+ var ps=$("pks");if(ps)ps.onclick=function(){var el=$("p"+ps.dataset.i);closePK();if(el)el.scrollIntoView()};
+ e.querySelectorAll(".pc.on").forEach(function(b){b.onclick=function(){PS=b.dataset.k;drawPK()}})
 }
 function openPK(){
  var t=TOPYM||(P.length?M(P[0]):""),m=t.match(/([0-9]+)年([0-9]+)月/);
- PY=m?+m[1]:NOW.getFullYear();PM=m?+m[2]:NOW.getMonth()+1;drawPK()
+ PY=m?+m[1]:NOW.getFullYear();PM=m?+m[2]:NOW.getMonth()+1;PS="";drawPK()
 }
 async function RENAME(){
  var v=prompt("新しいお名前を入れてください",ME);if(v===null)return;v=v.trim().slice(0,12);if(!v)return;
