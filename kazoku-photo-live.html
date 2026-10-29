@@ -46,7 +46,7 @@ nav{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px 12px c
 nav button{min-height:66px;border:0;border-radius:18px;background:transparent;color:var(--sub);font-weight:900;font-size:.8em;line-height:1.2}
 nav button b{display:block;font-size:1.5em}
 nav button.on{background:color-mix(in srgb,var(--acc) 16%,var(--card));color:var(--acc)}
-.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 70px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:14px 24px;border-radius:30px;font-size:.9em;opacity:0;pointer-events:none;transition:opacity .25s;white-space:nowrap}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 70px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:14px 24px;border-radius:30px;font-size:.9em;opacity:0;pointer-events:none;transition:opacity .25s;width:max-content;max-width:90vw;text-align:center}
 .toast.show{opacity:1}
 .chips{position:sticky;top:-8px;z-index:5;display:flex;gap:10px;overflow-x:auto;padding:10px 0;margin:-8px 0 8px;background:var(--bg)}
 .chip{flex:none;min-height:52px;padding:6px 22px;border-radius:26px;border:2px solid var(--acc);background:var(--card);color:var(--acc);font-weight:900;font-size:.9em}
@@ -90,6 +90,7 @@ a.btn{display:flex;align-items:center;justify-content:center;text-decoration:non
 .nbar{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:60px;margin-bottom:10px;padding:8px 18px;border-radius:20px;border:2px solid var(--acc);background:var(--acc);color:var(--onacc);font:inherit;font-weight:900}.nbar b{background:var(--onacc);color:var(--acc);border-radius:20px;padding:2px 14px}
 .nt{display:flex;gap:14px;align-items:center;width:100%;text-align:left;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:20px;padding:10px;margin:0 0 10px;font:inherit}.nt.nw{border-color:var(--heart)}.nt .th{flex:none;width:72px;border-radius:12px;overflow:hidden}.nt .th svg,.nt .th img,.nt .th video{display:block;width:100%;aspect-ratio:1;object-fit:cover}.nt .msg{font-size:.85em}
 .new{margin-left:8px;background:var(--heart);color:#fff;border-radius:10px;padding:0 8px;font-size:.6em;vertical-align:middle}
+header{flex-wrap:wrap}header h1{white-space:nowrap;font-size:1em}.size{white-space:nowrap}
 :focus-visible{outline:4px solid var(--heart);outline-offset:2px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script></head>
@@ -201,7 +202,7 @@ function one(p,s){
  return p.u?'<img src="'+p.u+'" alt="写真">':scene(p.c)}
 function img(p){var a=[p].concat(p.x||[]);if(a.length<2)return one(p);return '<div class="car"><div class="slides" data-n="'+a.length+'">'+a.map(function(q){return '<div class="sl">'+one(q)+'</div>'}).join('')+'</div><div class="badge">1 / '+a.length+'</div><button class="arr l" aria-label="まえの写真">‹</button><button class="arr r" aria-label="つぎの写真">›</button><div class="dots">'+a.map(function(q,i){return '<i'+(i?'':' class="on"')+'></i>'}).join('')+'</div></div>'}
 var S={heart:["❤️","すてき"],nice:["😊","かわいい"],thanks:["🙏","ありがとう"]};
-function toast(t){var e=$("toast");e.textContent=t;e.classList.add("show");setTimeout(function(){e.classList.remove("show")},1800)}
+function toast(t){var e=$("toast");e.textContent=t;e.classList.add("show");setTimeout(function(){e.classList.remove("show")},t.length>20?6000:1800)}
 function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function home(){
  var ms=[];P.forEach(function(p){if(ms.indexOf(M(p))<0)ms.push(M(p))});
@@ -274,7 +275,7 @@ var sb=supabase.createClient(SB_URL,SB_KEY),FID=null,MID=null,FAM={code:"",show:
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 function SEEN(){lsSet("seen",Date.now())}
-function fail(e){console.error(e);toast("うまくいきませんでした。もう一度ためしてください")}
+function fail(e){console.error(e);toast("うまくいきませんでした："+((e&&e.message)?e.message:String(e)))}
 function fmt(d){var n=new Date(),t=function(x){return x.getFullYear()*400+x.getMonth()*32+x.getDate()},hm=d.getHours()+":"+("0"+d.getMinutes()).slice(-2);
  if(t(d)==t(n))return"今日 "+hm;var y=new Date(n);y.setDate(n.getDate()-1);if(t(d)==t(y))return"昨日 "+hm;
  return(d.getFullYear()==n.getFullYear()?"":d.getFullYear()+"年")+(d.getMonth()+1)+"月"+d.getDate()+"日"}
