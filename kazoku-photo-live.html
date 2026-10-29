@@ -91,6 +91,7 @@ a.btn{display:flex;align-items:center;justify-content:center;text-decoration:non
 .nt{display:flex;gap:14px;align-items:center;width:100%;text-align:left;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:20px;padding:10px;margin:0 0 10px;font:inherit}.nt.nw{border-color:var(--heart)}.nt .th{flex:none;width:72px;border-radius:12px;overflow:hidden}.nt .th svg,.nt .th img,.nt .th video{display:block;width:100%;aspect-ratio:1;object-fit:cover}.nt .msg{font-size:.85em}
 .new{margin-left:8px;background:var(--heart);color:#fff;border-radius:10px;padding:0 8px;font-size:.6em;vertical-align:middle}
 header{flex-wrap:wrap}header h1{white-space:nowrap;font-size:1em}.size{white-space:nowrap}
+.del{width:100%;min-height:52px;margin-top:10px;border-radius:16px;border:2px solid var(--heart);background:var(--card);color:var(--heart);font:inherit;font-weight:900;font-size:.8em}
 :focus-visible{outline:4px solid var(--heart);outline-offset:2px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script></head>
@@ -183,7 +184,7 @@ function keep(fn){var m=$("main"),y=m.scrollTop;fn();render();m.scrollTop=y}
 function CM(p,i){var k=p.k||[],o=OPEN[i],h='<div class="cms"><button class="cbtn" data-i="'+i+'">💬 コメント'+(k.length?'（'+k.length+'）':'')+(o?'　▲とじる':'　▼ひらく')+'</button>';
  if(o){k.forEach(function(c){h+='<div class="cm"><b>'+esc(c.w)+'</b><br>'+esc(c.t)+'</div>'});
   h+='<div class="qps">'+["すてきね","元気そうで安心","ありがとう"].map(function(q){return '<button class="qp" data-i="'+i+'" data-q="'+q+'">'+q+'</button>'}).join('')+'</div><div class="cin"><input type="text" id="c'+i+'" placeholder="コメントを書く" maxlength="60"><button class="btn main cs" data-i="'+i+'">送る</button></div>'}
- return h+'</div>'}
+ return h+(p.own?'<button class="del" data-i="'+i+'">🗑 この投稿を消す</button>':'')+'</div>'}
 function find(){return '<h2>思い出をさがす</h2><input type="search" id="q" value="'+esc(Q)+'" placeholder="名前・月・ことばで さがす" autocomplete="off"><div class="sgs">'+["まなみ","けんじ","ゆきこ","海","花火","2025年"].map(function(s){return '<button class="sg" data-q="'+s+'">'+s+'</button>'}).join('')+'</div><div id="res">'+R()+'</div><div id="cal">'+CAL()+'</div>'}
 function R(){var q=Q.trim();if(!q)return '<div class="note">家族の名前、月（例：9月）、ことば（例：海）で さがせます。コメントの中もさがします。</div>';
  var t=q.replace(/　/g," ").split(" ").filter(Boolean),r=[];
@@ -260,6 +261,7 @@ function bind(){
  var td=$("tdy");if(td)td.onclick=function(){CY=NOW.getFullYear();CMo=NOW.getMonth()+1;SD=CY+"-"+CMo+"-"+NOW.getDate();$("cal").innerHTML=CAL();bind()};
  var sy=$("sy"),sm=$("sm");
  if(sy){sy.onchange=function(){CY=+sy.value;SD=null;$("cal").innerHTML=CAL();bind()};sm.onchange=function(){CMo=+sm.value;SD=null;$("cal").innerHTML=CAL();bind()}}
+ document.querySelectorAll(".del").forEach(function(e){e.onclick=function(){DEL(P[+e.dataset.i])}});
  var qi=$("q");
  if(qi){qi.oninput=function(){Q=qi.value;$("res").innerHTML=R();bind()};document.querySelectorAll(".sg").forEach(function(e){e.onclick=function(){Q=e.dataset.q;qi.value=Q;$("res").innerHTML=R();bind()}})}
  var f=$("file");
@@ -312,7 +314,7 @@ async function load(){
   var d=new Date(p.posted_at),who=p.members?p.members.name:"家族";
   var hs=p.photos.slice().sort(function(a,b){return a.position-b.position}).map(function(h){return{u:url[h.path],v:/\.(mp4|mov|webm|m4v)$/i.test(h.path)}}).filter(function(h){return h.u});
   var fst=hs[0]||{c:["#CBD5D4","#EEF4F3","#E5ECEB","#B7C6C4","#9DB0AD"]};
-  var o={id:p.id,f:who,dt:d,d:fmt(d),y:d.getFullYear(),mo:(d.getMonth()+1)+"月",md:(d.getMonth()+1)+"/"+d.getDate(),m:p.message||"",u:fst.u,v:fst.v,c:fst.c||[],x:hs.slice(1),r:[],mine:[],
+  var o={id:p.id,own:p.member_id==MID,paths:p.photos.map(function(h){return h.path}),f:who,dt:d,d:fmt(d),y:d.getFullYear(),mo:(d.getMonth()+1)+"月",md:(d.getMonth()+1)+"/"+d.getDate(),m:p.message||"",u:fst.u,v:fst.v,c:fst.c||[],x:hs.slice(1),r:[],mine:[],
    k:p.comments.slice().sort(function(a,b){return a.created_at<b.created_at?-1:1}).map(function(c){return{w:c.members?c.members.name:"家族",t:c.body}})};
   p.reactions.forEach(function(r){if(o.r.indexOf(r.kind)<0)o.r.push(r.kind);if(r.member_id==MID)o.mine.push(r.kind)});
   P.push(o);
@@ -342,6 +344,14 @@ async function POST(msg,items){
   }
   draft=[];await load();cur=0;tab="home";render();toast("家族に送りました")
  }catch(e){fail(e);go.disabled=false;go.textContent="家族に送る"}
+}
+async function DEL(p){
+ if(!confirm("この投稿を消しますか？\n消すと、元にもどせません。"))return;
+ try{
+  if(p.paths.length){var r=await sb.storage.from("photos").remove(p.paths);if(r.error)throw r.error}
+  var d=await sb.from("posts").delete().eq("id",p.id);if(d.error)throw d.error;
+  toast("消しました");await load();keep(function(){})
+ }catch(e){fail(e)}
 }
 async function CMT(p,v){var r=await sb.from("comments").insert({post_id:p.id,member_id:MID,body:v});if(r.error)return fail(r.error);toast("コメントしました");await load();keep(function(){})}
 async function RCT(p,k){var on=p.mine.indexOf(k)>-1,r=on?await sb.from("reactions").delete().eq("post_id",p.id).eq("member_id",MID).eq("kind",k):await sb.from("reactions").insert({post_id:p.id,member_id:MID,kind:k});if(r.error)return fail(r.error);if(!on)toast(S[k][1]+"を送りました");await load();keep(function(){})}
