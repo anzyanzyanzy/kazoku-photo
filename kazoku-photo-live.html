@@ -296,7 +296,7 @@ async function START(name,code){
  OB=null;ob();init()
 }
 async function load(){
- var q=await sb.from("posts").select("id,member_id,message,posted_at,members(name),photos(path,position),comments(body,created_at,member_id,members(name)),reactions(kind,member_id)").eq("family_id",FID).order("posted_at",{ascending:false}).limit(200);
+ var q=await sb.from("posts").select("id,member_id,message,posted_at,members!member_id(name),photos(path,position),comments(body,created_at,member_id,members!member_id(name)),reactions(kind,member_id)").eq("family_id",FID).order("posted_at",{ascending:false}).limit(200);
  if(q.error)throw q.error;
  var f=await sb.from("families").select("invite_code").eq("id",FID).single();
  var mm=await sb.from("members").select("name").eq("family_id",FID).order("created_at");
